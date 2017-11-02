@@ -2,8 +2,10 @@ require "rubygems"
 require "sequel"
 require "nokogiri"
 require "faraday"
-require "byebug"
 require "json"
+require "byebug"
+
+require "./utils"
 
 DB = Sequel.sqlite("idfa.sqlite")
 client = Faraday.new("https://www.idfa.nl")
@@ -33,13 +35,9 @@ end
 (15..26).each do |day|
   puts "\nScraping #{day} november"
 
-  doc = Nokogiri::HTML(
+  state = Utils.state_from_html(
     client.get("/nl/blokkenschema?filters[formattedDate]=#{day} november").body
   )
-
-  scripts = doc.css("body script").map(&:content)
-  state_script = scripts.select{|script| script =~ /initialState/}.first
-  state = JSON.parse(state_script.match(/.*?({.*})\;/m)[1])
 
   schedule = state["schedule"]["schedule"]
   total_pages = schedule["pagination"]["totalPages"]

@@ -2,7 +2,10 @@ require "rubygems"
 require "sequel"
 require "nokogiri"
 require "faraday"
+require "json"
 require "byebug"
+
+require "./utils"
 
 DB = Sequel.sqlite("idfa.sqlite")
 client = Faraday.new("https://www.idfa.nl")
@@ -20,7 +23,7 @@ puts "You have rated #{ratings_table.count} of #{films_table.count} films:"
   puts "  - #{ratings_table.where(score: score).count} films with score #{score}"
 end
 
-unrated_films = DB[:films]
+unrated_films = films_table
   .select_all(:films)
   .left_join(:ratings, "films.id = ratings.film_id")
   .where("ratings.film_id IS NULL")
@@ -30,6 +33,7 @@ unrated_films.each do |film|
   puts "\n---\n\n"
 
   puts film[:title]
+  puts "#{film[:duration]} minutes"
   puts film[:summary]
 
   quit = false
@@ -62,12 +66,18 @@ unrated_films.each do |film|
         break
 
       when "l"
-        puts "Not implemented yet"
-        # synopsis_span = Nokogiri::HTML(
-        #   client.get(film[:details_path]).body
-        # ).css(".synopsis-container .syn-synopsis")
+        state = Utils.state_from_html(
+          client.get(film[:details_path]).body
+        )
 
-        # puts "\n#{synopsis_span.text.strip}"
+        current_film = state["film"]["current"]
+        if !current_film
+          puts "No film synopsis available"
+        else
+          puts "\n" + Nokogiri::HTML.parse(
+            current_film["info"]["general"]["synopsis"]
+          ).text
+        end
 
       when "s"
         break
