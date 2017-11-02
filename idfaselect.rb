@@ -4,56 +4,12 @@ require "nokogiri"
 require "faraday"
 require "byebug"
 
-DB = Sequel.sqlite("db.sqlite")
+DB = Sequel.sqlite("idfa.sqlite")
 client = Faraday.new("https://www.idfa.nl")
 
 if !DB.table_exists?(:films)
-  print "Scraping... "
-
-  DB.create_table :films do
-    primary_key :id
-    String :name
-    String :description
-    
-    String :image_url
-    String :details_path
-  end
-
-  DB.create_table :ratings do
-    primary_key :id
-    Integer :film_id
-    Integer :score
-  end
-
-  films_table = DB[:films]
-
-  (["0"] + ("A".."Z").to_a).each do |startwith|
-    print startwith
-
-    doc = Nokogiri::HTML(
-      client.get("/nl/festival/films-events-temp.aspx?startwith=#{startwith}").body
-    )
-
-    doc.css(".rgMasterTable tbody tr td div.film").each do |film_div|
-      film = {}
-
-      film[:image_url] = film_div.css("div.image img").attribute("src").value
-      film[:details_path] = film_div.css("h5 a").attribute("href").value
-      
-      text_div = film_div.css("div.text")
-      film[:name] = text_div.css("h5").text.strip
-
-      text_div.css("h5, b, a").remove
-      film[:description] = text_div.text.strip
-
-      films_table.insert(film)
-    end
-  end
-
-  print "\n"
-
-else
-  puts "The films table already exists. Skipping scrape phase.\n\n"
+  puts "The films table doesn't exist. Cannot select."
+  abort
 end
 
 films_table = DB[:films]
@@ -73,8 +29,8 @@ previous_rating_id = nil
 unrated_films.each do |film|
   puts "\n---\n\n"
 
-  puts film[:name]
-  puts film[:description]
+  puts film[:title]
+  puts film[:summary]
 
   quit = false
   while true
@@ -106,11 +62,12 @@ unrated_films.each do |film|
         break
 
       when "l"
-        synopsis_span = Nokogiri::HTML(
-          client.get(film[:details_path]).body
-        ).css(".synopsis-container .syn-synopsis")
+        puts "Not implemented yet"
+        # synopsis_span = Nokogiri::HTML(
+        #   client.get(film[:details_path]).body
+        # ).css(".synopsis-container .syn-synopsis")
 
-        puts "\n#{synopsis_span.text.strip}"
+        # puts "\n#{synopsis_span.text.strip}"
 
       when "s"
         break
