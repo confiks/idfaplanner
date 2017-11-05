@@ -66,13 +66,18 @@ unrated_films.each do |film|
         break
 
       when "l"
+        puts film[:details_path]
         state = Utils.state_from_html(
           client.get(film[:details_path]).body
         )
 
         current_film = state["film"]["current"]
         if !current_film
-          puts "No film synopsis available"
+          film_summaries = state["show"]["current"]["films"].map do |film|
+            Nokogiri::HTML.parse(film["summary"])
+          end
+          
+          puts "\n#{film_summaries.join("\n\n")}"
         else
           puts "\n" + Nokogiri::HTML.parse(
             current_film["info"]["general"]["synopsis"]
