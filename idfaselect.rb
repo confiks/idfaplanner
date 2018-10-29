@@ -29,16 +29,19 @@ unrated_films = films_table
   .where("ratings.film_id IS NULL")
 
 previous_rating_id = nil
-unrated_films.each do |show|
+unrated_films.each do |event|
   puts "\n---\n\n"
 
-  puts show[:title]
-  puts "#{show[:duration]} minutes"
-  puts show[:summary]
+  puts event[:title]
+  puts "#{event[:duration]} minutes"
+  puts "\n"
+  puts event[:summary]
+  puts "\n"
+  puts event[:description]
 
   quit = false
   while true
-    print "\nWhat do you want to do? Rate 0-3, l(ong description), s(kip), u(ndo previous), q(uit): "
+    print "\nWhat do you want to do? Rate 0-3, s(kip), u(ndo previous), q(uit): "
 
     begin
       answer = gets.strip
@@ -55,7 +58,7 @@ unrated_films.each do |show|
           score = answer.to_i
         end
         
-        previous_rating_id = ratings_table.insert(film_id: show[:id], score: score)
+        previous_rating_id = ratings_table.insert(film_id: event[:id], score: score)
 
         if score > 0
           puts "Rated with score #{"★ " * answer.to_i}!"
@@ -64,30 +67,6 @@ unrated_films.each do |show|
         end
 
         break
-
-      when "l"
-        show_state = Utils.state_from_html(
-          client.get(show[:details_path]).body
-        )
-
-        current_film = show_state["film"]["current"]
-        if current_film
-          puts "\n" + Nokogiri::HTML.parse(
-            current_film["info"]["general"]["synopsis"]
-          ).text
-        else
-          film_summaries = show_state["show"]["current"]["films"].map do |film|
-            film_state = Utils.state_from_html(
-              client.get(film["uri"]).body
-            )
-            
-            Nokogiri::HTML.parse(
-              film_state["film"]["current"]["info"]["general"]["synopsis"]
-            )
-          end
-          
-          puts "\n#{film_summaries.join("\n\n")}"
-        end
 
       when "s"
         break
