@@ -71,6 +71,9 @@ unrated_films.each do |event|
       when "s"
         break
 
+      when ""
+        break
+
       when "u"
         if !previous_rating_id
           puts "No previous rating to undo."
